@@ -108,10 +108,24 @@ export class NotificationsService implements INotificationsService {
 	};
 
 	private sendNotifications = async (monitor: Monitor, monitorStatusResponse: MonitorStatusResponse, decision: MonitorActionDecision) => {
-		const shouldUseEscalatedNotifications =
-			decision.notificationReason === "threshold_breach" &&
+		// Check if we should use escalated notifications based on downtime duration
+		let shouldUseEscalatedNotifications = false;
+
+		if (
+			monitor.escalationMinutes &&
 			Array.isArray(monitor.escalatedNotifications) &&
-			monitor.escalatedNotifications.length > 0;
+			monitor.escalatedNotifications.length > 0 &&
+			decision.incidentReason === "status_down"
+		) {
+			// Find active incident to check downtime
+			const activeIncident = monitorStatusResponse.activeIncident;
+			if (activeIncident) {
+				const downtimeMs = Date.now() - new Date(activeIncident.startTime).getTime();
+				const downtimeMinutes = Math.floor(downtimeMs / (60 * 1000));
+				shouldUseEscalatedNotifications = downtimeMinutes >= monitor.escalationMinutes;
+			}
+		}
+
 		const notificationIds = shouldUseEscalatedNotifications ? monitor.escalatedNotifications : (monitor.notifications ?? []);
 		const notifications = await this.notificationsRepository.findNotificationsByIds(notificationIds);
 

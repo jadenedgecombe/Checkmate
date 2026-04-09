@@ -300,6 +300,10 @@ const MonitorSchema = new Schema<MonitorDocument>(
 				ref: "Notification",
 			},
 		],
+		escalationMinutes: {
+			type: Number,
+			default: null,
+		},
 		secret: {
 			type: String,
 		},
