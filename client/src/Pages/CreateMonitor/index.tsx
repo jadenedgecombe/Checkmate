@@ -764,151 +764,72 @@ const CreateMonitorPage = () => {
 					/>
 				}
 			/>
-
-			{(watchedType === "http" ||
-				watchedType === "grpc" ||
-				watchedType === "websocket") && (
-				<ConfigBox
-					title={t("pages.createMonitor.form.ignoreTls.title")}
-					subtitle={t("pages.createMonitor.form.ignoreTls.description")}
-					rightContent={
-						<Controller
-							name="ignoreTlsErrors"
-							control={control}
-							render={({ field }) => (
-								<Stack
-									direction="row"
-									alignItems="center"
-									spacing={theme.spacing(SPACING.LG)}
-								>
-									<Switch
-										checked={field.value ?? false}
-										onChange={(e) => field.onChange(e.target.checked)}
-									/>
-									<Typography>
-										{t("pages.createMonitor.form.ignoreTls.option.tls.label")}
-									</Typography>
-								</Stack>
-							)}
-						/>
-					}
-				/>
-			)}
-
-			{watchedType === "http" && (
-				<ConfigBox
-					title={t("pages.createMonitor.form.advanced.title")}
-					subtitle={t("pages.createMonitor.form.advanced.description")}
-					rightContent={
-						<Stack spacing={theme.spacing(LAYOUT.MD)}>
-							<Controller
-								name="useAdvancedMatching"
-								control={control}
-								render={({ field }) => (
-									<Stack
-										direction="row"
-										alignItems="center"
-										spacing={theme.spacing(SPACING.LG)}
-									>
-										<Switch
-											checked={field.value ?? false}
-											onChange={(e) => field.onChange(e.target.checked)}
-										/>
-										<Typography>
-											{t(
-												"pages.createMonitor.form.advanced.option.advancedMatching.label"
-											)}
-										</Typography>
-									</Stack>
-								)}
-							/>
-							{watchedUseAdvancedMatching && (
+			<ConfigBox
+				title={t("pages.createMonitor.form.escalatedNotifications.title")}
+				subtitle={t("pages.createMonitor.form.escalatedNotifications.description")}
+				rightContent={
+					<Controller
+						name="escalatedNotifications"
+						control={control}
+						render={({ field }) => {
+							const notificationOptions = (notifications ?? []).map((n) => ({
+								...n,
+								name: n.notificationName,
+							}));
+							const selectedNotifications = notificationOptions.filter((n) =>
+								(field.value ?? []).includes(n.id)
+							);
+							return (
 								<Stack spacing={theme.spacing(LAYOUT.MD)}>
-									<Controller
-										name="matchMethod"
-										control={control}
-										render={({ field }) => (
-											<Select
-												{...field}
-												value={field.value ?? "equal"}
-												fieldLabel={t(
-													"pages.createMonitor.form.advanced.option.matchMethod.label"
-												)}
-											>
-												<MenuItem value="equal">
-													{t(
-														"pages.createMonitor.form.advanced.option.matchMethod.equal"
-													)}
-												</MenuItem>
-												<MenuItem value="include">
-													{t(
-														"pages.createMonitor.form.advanced.option.matchMethod.include"
-													)}
-												</MenuItem>
-												<MenuItem value="regex">
-													{t(
-														"pages.createMonitor.form.advanced.option.matchMethod.regex"
-													)}
-												</MenuItem>
-											</Select>
-										)}
+									<Autocomplete
+										multiple
+										options={notificationOptions}
+										value={selectedNotifications}
+										getOptionLabel={(option) => option.name}
+										onChange={(_: unknown, newValue: typeof notificationOptions) => {
+											field.onChange(newValue.map((n) => n.id));
+										}}
+										isOptionEqualToValue={(option, value) => option.id === value.id}
 									/>
-									<Controller
-										name="expectedValue"
-										control={control}
-										render={({ field, fieldState }) => (
-											<TextField
-												{...field}
-												value={field.value ?? ""}
-												fieldLabel={t(
-													"pages.createMonitor.form.advanced.option.expectedValue.label"
-												)}
-												fullWidth
-												error={!!fieldState.error}
-												helperText={fieldState.error?.message ?? ""}
-											/>
-										)}
-									/>
-									<Controller
-										name="jsonPath"
-										control={control}
-										render={({ field, fieldState }) => (
-											<TextField
-												{...field}
-												value={field.value ?? ""}
-												fieldLabel={t(
-													"pages.createMonitor.form.advanced.option.jsonPath.label"
-												)}
-												fullWidth
-												error={!!fieldState.error}
-												helperText={fieldState.error?.message ?? ""}
-											/>
-										)}
-									/>
-									<Typography
-										component="span"
-										color="text.secondary"
-										sx={{ opacity: 0.8 }}
-									>
-										<Trans
-											i18nKey="pages.createMonitor.form.advanced.option.jsonPath.description"
-											components={{
-												jmesLink: (
-													<Link
-														href="https://jmespath.org/"
-														target="_blank"
-														rel="noopener noreferrer"
-													/>
-												),
-											}}
-										/>
-									</Typography>
+									{selectedNotifications.length > 0 && (
+										<Stack
+											flex={1}
+											width="100%"
+										>
+											{selectedNotifications.map((notification, index) => (
+												<Stack
+													direction="row"
+													alignItems="center"
+													key={notification.id}
+													width="100%"
+												>
+													<Typography flexGrow={1}>
+														{notification.notificationName}
+													</Typography>
+													<IconButton
+														size="small"
+														onClick={() => {
+															field.onChange(
+																(field.value ?? []).filter(
+																	(id: string) => id !== notification.id
+																)
+															);
+														}}
+														aria-label="Remove notification"
+													>
+														<Trash2 size={16} />
+													</IconButton>
+													{index < selectedNotifications.length - 1 && <Divider />}
+												</Stack>
+											))}
+										</Stack>
+									)}
 								</Stack>
-							)}
-						</Stack>
-					}
-				/>
-			)}
+							);
+						}}
+					/>
+				}
+			/>
 
 			{supportsGeoCheck(watchedType) && (
 				<ConfigBox
